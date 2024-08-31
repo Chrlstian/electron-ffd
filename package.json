@@ -1,0 +1,29 @@
+{
+  "name": "ffd_bot",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "server": "node ffd_bot.js",
+    "package": "electron-packager . --platform=win32 --arch=x64 --icon=path/to/icon.ico --out=dist --overwrite"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^32.0.1",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "node-telegram-bot-api": "^0.66.0",
+    "puppeteer": "^23.2.1"
+  }
+}
+
+
+
+

@@ -1,0 +1,45 @@
+/* style.css */
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+.main-container{
+    text-align: center;
+    padding: 40px;
+}
+
+#server-container{
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+    gap: 2rem;
+}
+
+#start-server{
+    padding: 18px 36px;
+    cursor: pointer;
+    border: 1px solid rgb(46, 87, 46);
+    border-radius: 5px;
+    color: rgb(99, 99, 98);
+}
+#stop-server{
+    padding: 18px 36px;
+    cursor: pointer;
+    border: 1px solid  rgb(196, 50, 69);
+    border-radius: 5px;
+    color: rgb(99, 99, 98);
+}
+
+#start-server:hover{
+    background-color: rgb(46, 87, 46);
+    color: #fff;
+}
+#stop-server:hover{
+    background-color: rgb(196, 50, 69);
+    color: #fff;
+}
+
+#status-message{
+    margin-top: 2rem;
+}
