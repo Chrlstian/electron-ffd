@@ -1,16 +1,16 @@
-// //main.js
-
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { spawn, exec } = require('child_process'); // Use spawn instead of fork
+const { spawn, exec } = require('child_process');
+// const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
 let serverProcess = null;
+let mainWindow = null;
 
 function createWindow() {
-  const win = new BrowserWindow({
-    width: 550,
-    height: 250,
+  mainWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: true,
@@ -18,24 +18,34 @@ function createWindow() {
     }
   });
 
-  win.loadURL(url.format({
+  mainWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'index.html'),
     protocol: 'file:',
     slashes: true
   }));
+
+  // Open DevTools by default
+  // mainWindow.webContents.openDevTools();
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-app.whenReady().then(createWindow);
+// Initialize allowedUsers and create the main window when the app is ready
+app.whenReady().then(() => {
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+      app.quit();
   }
 });
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+      createWindow();
   }
 });
 
@@ -63,8 +73,8 @@ ipcMain.on('start-server', (event) => {
     });
   
     event.reply('server-status', 'The server has started.');
-  });
-  
+});
+
 //   ipcMain.on('stop-server', (event) => {
 //     if (serverProcess) {
 //       serverProcess.kill('SIGINT'); // Send SIGINT to gracefully terminate the process
@@ -74,5 +84,4 @@ ipcMain.on('start-server', (event) => {
 //       event.reply('server-status', 'The server is not running.');
 //     }
 //   });
-
 
