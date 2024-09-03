@@ -5,7 +5,7 @@
   "scripts": {
     "start": "electron .",
     "server": "node ffd_bot.js",
-    "package": "electron-packager . --platform=win32 --arch=x64 --icon=path/to/icon.ico --out=dist --overwrite"
+   "package": "electron-packager . --platform=win32 --arch=x64 --icon=path/to/icon.ico --out=dist --overwrite"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +13,6 @@
   "description": "",
   "devDependencies": {
     "electron": "^32.0.1",
-    "electron-builder": "^24.13.3",
     "electron-packager": "^17.1.2"
   },
   "dependencies": {
@@ -23,7 +22,3 @@
     "puppeteer": "^23.2.1"
   }
 }
-
-
-
-
