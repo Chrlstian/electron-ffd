@@ -1,14 +1,23 @@
 const TelegramBot = require('node-telegram-bot-api');
 const puppeteer = require('puppeteer');
-const { differenceInDays, parse, format } = require('date-fns'); // Use date-fns for date manipulation
+const { differenceInDays, parse} = require('date-fns'); // Use date-fns for date manipulation
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
-
 const bot = new TelegramBot(token, { polling: true });
 
-// List of allowed user IDs
-const allowedUsers = new Set([5966357024, 7272558097]); // Using a Set for faster lookups
+const allowedUsersFile = path.join(__dirname, 'allowedUsers.json');
+
+// Load allowed users from the JSON file, or start with the default values if the file doesn't exist
+let allowedUsers = new Set();
+if (fs.existsSync(allowedUsersFile)) {
+  const data = fs.readFileSync(allowedUsersFile, 'utf8');
+  allowedUsers = new Set(JSON.parse(data));
+} else {
+  allowedUsers = new Set([5966357024, 7272558097]); // Default values
+}
 
 let scrapeState = {}; // To store state of scraping process for each user
 let websiteOrder = ['https://www.kleinanzeigen.de/', 'https://www.ebay.de/', 'https://www.willhaben.at/'];
@@ -24,10 +33,103 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id; 
     const userId = msg.from.id;
     const text = msg.text;
-  
+
     if (!allowedUsers.has(userId)) {
       return bot.sendMessage(chatId, 'You are not authorized to use this bot.');
     }
+
+    if (text === '/addUser') {
+      bot.sendMessage(chatId, 'Please enter the user ID to add:');
+      scrapeState[chatId] = { step: 'awaiting_user_id' };
+      return;
+    }
+
+    if (text === '/removeUser') {
+      bot.sendMessage(chatId, 'Please enter the user ID to remove:');
+      scrapeState[chatId] = { step: 'awaiting_remove_user_id' };
+      return;
+    }
+    
+    if (scrapeState[chatId] && scrapeState[chatId].step === 'awaiting_user_id') {
+      const newUserId = parseInt(text.trim(), 10);
+      
+      if (isNaN(newUserId)) {
+        bot.sendMessage(chatId, 'Invalid user ID. Please enter a valid numeric user ID.');
+        return;
+      }
+
+      if (allowedUsers.has(newUserId)) {
+        bot.sendMessage(chatId, 'User ID is already in the allowed list.');
+      } else {
+        allowedUsers.add(newUserId);
+        bot.sendMessage(chatId, `User ID ${newUserId} has been added to the allowed list.`);
+
+        // Save the updated allowedUsers set to the JSON file
+        fs.writeFileSync(allowedUsersFile, JSON.stringify([...allowedUsers], null, 2));
+      }
+
+      delete scrapeState[chatId];
+      return;
+    }
+
+    if (scrapeState[chatId] && scrapeState[chatId].step === 'awaiting_remove_user_id') {
+      const userIdToRemove = parseInt(text.trim(), 10);
+      
+      if (isNaN(userIdToRemove)) {
+        bot.sendMessage(chatId, 'Invalid user ID. Please enter a valid numeric user ID.');
+        return;
+      }
+
+      if (allowedUsers.has(userIdToRemove)) {
+        allowedUsers.delete(userIdToRemove);
+        bot.sendMessage(chatId, `User ID ${userIdToRemove} has been removed from the allowed list.`);
+
+        // Save the updated allowedUsers set to the JSON file
+        fs.writeFileSync(allowedUsersFile, JSON.stringify([...allowedUsers], null, 2));
+      } else {
+        bot.sendMessage(chatId, 'User ID is not in the allowed list.');
+      }
+
+      delete scrapeState[chatId];
+      return;
+    }
+
+    // if (text === '/addUser') {
+    //   if (!allowedUsers.has(userId)) {
+    //     return bot.sendMessage(chatId, 'You are not authorized to add users.');
+    //   }
+    //   bot.sendMessage(chatId, 'Please enter the user ID to add:');
+    //   scrapeState[chatId] = { step: 'awaiting_user_id' };
+    //   return;
+    // }
+    
+    // if (scrapeState[chatId] && scrapeState[chatId].step === 'awaiting_user_id') {
+    //   const newUserId = parseInt(text.trim(), 10);
+      
+    //   if (isNaN(newUserId)) {
+    //     bot.sendMessage(chatId, 'Invalid user ID. Please enter a valid numeric user ID.');
+    //     return;
+    //   }
+
+    //   if (allowedUsers.has(newUserId)) {
+    //     bot.sendMessage(chatId, 'User ID is already in the allowed list.');
+    //   } else {
+    //     allowedUsers.add(newUserId);
+    //     bot.sendMessage(chatId, `User ID ${newUserId} has been added to the allowed list.`);
+
+    //     // Save the updated allowedUsers set to the JSON file
+    //     fs.writeFileSync(allowedUsersFile, JSON.stringify([...allowedUsers], null, 2));
+    //   }
+
+    //   delete scrapeState[chatId];
+    //   return;
+    // }
+
+    /////////////
+  
+    // if (!allowedUsers.has(userId)) {
+    //   return bot.sendMessage(chatId, 'You are not authorized to use this bot.');
+    // }
   
     if (text === '/scrape') {
       bot.sendMessage(chatId, 'Do you want to change the order of websites? (Yes/No)');
@@ -81,7 +183,7 @@ bot.on('message', async (msg) => {
       const { productParam, minPrice, maxPrice } = scrapeState[chatId];
   
       bot.sendMessage(chatId, 'Waiting for data...');
-  
+
       try {
         for (const site of websiteOrder) {
           let links = [];
@@ -192,12 +294,21 @@ async function scrollPage(page, scrollTimes = 10, delay = 1000) {
 
 // Function to scrape data with site-specific selectors
 async function scrapeData(url, productParam, minPrice, maxPrice, selectors, daysOnline) {
+
+  // Define the path to the Chromium executable
+  // const chromiumPath = path.join(__dirname, 'browser', 'puppeteer', 'chrome', 'win64-128.0.6613.86', 'chrome-win64', 'chrome.exe');
+  const chromiumPath = path.join(__dirname, 'browser', 'puppeteer', 'chrome-headless-shell', 'win64-128.0.6613.86', 'chrome-headless-shell-win64', 'chrome-headless-shell.exe');
+
+  console.log('Chromium Path:', chromiumPath); // Log the path to verify it
+
   const browser = await puppeteer.launch({ 
-    headless: false,
-    // headless: true,
-    // args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    defaultViewport: null
+    // headless: false,
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    defaultViewport: null,
+    executablePath: chromiumPath, // Use the custom Chromium path
   });
+
   const page = await browser.newPage();
   let allLinks = []; // To store all the links from all pages
 
@@ -439,7 +550,7 @@ async function scrapeData(url, productParam, minPrice, maxPrice, selectors, days
     }     
 
     // After all pages are scraped, log a message indicating that the product scraping for this website is done
-    console.log(`${new URL(url).hostname} product scraped. Send to Telegram.`);
+    // console.log(`${new URL(url).hostname} product scraped. Send to Telegram.`);
 
     return allLinks;
   } catch (error) {
