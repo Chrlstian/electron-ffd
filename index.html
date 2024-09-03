@@ -18,7 +18,7 @@
     
     <script>
         const { ipcRenderer } = require('electron');
-
+        
         document.getElementById('start-server').addEventListener('click', () => {
             ipcRenderer.send('start-server');
         });
@@ -33,38 +33,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World!</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="main-container">
-        <button id="start-server">START SERVER</button>
-        <button id="stop-server">STOP SERVER</button>
-
-        <p></p>
-    </div>
-
-    <script>
-        const { ipcRenderer } = require('electron');
-
-        document.getElementById('start-server').addEventListener('click', () => {
-            ipcRenderer.send('start-server');
-        });
-
-        document.getElementById('stop-server').addEventListener('click', () => {
-            ipcRenderer.send('stop-server');
-        });
-    </script>
-</body>
-</html>
-
- -->
